@@ -1,0 +1,138 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Merchant {
+  id            String     @id @default(cuid())
+  legalName     String
+  businessType  String
+  gstin         String?    @unique
+  addressLine1  String
+  addressLine2  String?
+  city          String
+  state         String
+  country       String
+  postalCode    String
+  contactEmail  String
+  contactPhone  String?
+  logoUrl       String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  users         User[]
+  kyc           Kyc?
+  documents     Document[]
+  auditLogs     AuditLog[]
+
+  @@map("merchants")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  merchantId    String?
+  merchant      Merchant?      @relation(fields: [merchantId], references: [id])
+  email         String         @unique
+  passwordHash  String
+  name          String
+  role          Role           @default(MERCHANT_USER)
+  isActive      Boolean        @default(true)
+  twoFASecret   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+  documents     Document[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  MERCHANT_ADMIN
+  MERCHANT_MANAGER
+  MERCHANT_USER
+  READ_ONLY
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  userAgent String?
+  ip        String?
+
+  @@map("refresh_tokens")
+}
+
+model Kyc {
+  id            String   @id @default(cuid())
+  merchantId    String   @unique
+  merchant      Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  panNumber     String?
+  panStatus     String?  // PENDING/VERIFIED/FAILED
+  aadhaarLast4  String?
+  aadhaarStatus String?
+  checkpoints   Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("kyc")
+}
+
+model Document {
+  id             String   @id @default(cuid())
+  merchantId     String
+  merchant       Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  uploadedById   String
+  uploadedBy     User     @relation(fields: [uploadedById], references: [id])
+  category       String   // KYC, CONTRACT, INVOICE, BANK, MISC
+  filename       String
+  storageKey     String   @unique
+  version        Int      @default(1)
+  mimeType       String
+  sizeBytes      Int
+  checksumSha256 String
+  isDeleted      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  metadata       Json?
+
+  @@map("documents")
+}
+
+model AuditLog {
+  id         String    @id @default(cuid())
+  actorId    String?
+  actor      User?     @relation(fields: [actorId], references: [id])
+  merchantId String?
+  merchant   Merchant? @relation(fields: [merchantId], references: [id])
+  action     String    // e.g., "DOC.UPLOAD", "KYC.VERIFY", "USER.CREATE"
+  targetId   String?
+  ip         String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime  @default(now())
+
+  @@map("audit_logs")
+}
+
+model Permission {
+  id    String @id @default(cuid())
+  code  String @unique // "doc:upload", "kyc:verify", etc.
+  name  String
+  roles Role[]
+
+  @@map("permissions")
+}
