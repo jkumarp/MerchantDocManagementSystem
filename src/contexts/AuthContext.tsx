@@ -1,18 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../services/api';
+import type { User, AuthResponse } from '../types/api';
 
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  merchantId?: string;
-  merchant?: {
-    id: string;
-    legalName: string;
-  };
-}
 
 interface AuthContextType {
   user: User | null;
@@ -30,7 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
 
   // Auto-refresh token
-  const { data: refreshData, isLoading } = useQuery({
+  const { data: refreshData, isLoading } = useQuery<AuthResponse>({
     queryKey: ['auth', 'refresh'],
     queryFn: authApi.refresh,
     retry: false,
@@ -50,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: ({ email, password, totpCode }: { email: string; password: string; totpCode?: string }) =>
       authApi.login(email, password, totpCode),
-    onSuccess: (data) => {
+    onSuccess: (data: AuthResponse) => {
       setUser(data.user);
       setAccessToken(data.accessToken);
       authApi.setToken(data.accessToken);
@@ -77,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const refreshToken = async () => {
-    const data = await authApi.refresh();
+    const data: AuthResponse = await authApi.refresh();
     setUser(data.user);
     setAccessToken(data.accessToken);
     authApi.setToken(data.accessToken);

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { documentApi } from '../services/api';
+import type { DocumentListResponse, Document } from '../types/api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -34,7 +35,7 @@ export function DocumentsPage() {
   const [uploadCategory, setUploadCategory] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
-  const { data: documentsData, isLoading } = useQuery({
+  const { data: documentsData, isLoading } = useQuery<DocumentListResponse>({
     queryKey: ['documents', user?.merchantId, selectedCategory, page],
     queryFn: () => documentApi.list({
       merchantId: user?.merchantId,
@@ -283,7 +284,7 @@ export function DocumentsPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {documentsData?.documents.map((doc: any) => (
+              {documentsData?.documents.map((doc: Document) => (
                 <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
                   <div className="flex items-center space-x-3">
                     <FileText className="h-8 w-8 text-gray-400" />

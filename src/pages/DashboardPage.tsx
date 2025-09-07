@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { merchantApi } from '../services/api';
+import type { MerchantSummary } from '../types/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { LoadingSpinner } from '../components/ui/loading-spinner';
@@ -15,10 +16,12 @@ import {
   TrendingUp
 } from 'lucide-react';
 
+// Add missing import
+import { Building2 } from 'lucide-react';
 export function DashboardPage() {
   const { user } = useAuth();
 
-  const { data: summary, isLoading } = useQuery({
+  const { data: summary, isLoading } = useQuery<MerchantSummary>({
     queryKey: ['merchant', 'summary', user?.merchantId],
     queryFn: () => merchantApi.getSummary(user!.merchantId!),
     enabled: !!user?.merchantId,
@@ -218,7 +221,7 @@ export function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {summary.documents.recent.map((doc: any) => (
+              {summary.documents.recent.map((doc) => (
                 <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center space-x-3">
                     <FileText className="h-5 w-5 text-gray-400" />
@@ -249,7 +252,7 @@ export function DashboardPage() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {Object.entries(summary.documents.byCategory).map(([category, count]) => (
               <div key={category} className="text-center p-4 border rounded-lg">
-                <div className="text-2xl font-bold text-gray-900">{count as number}</div>
+                <div className="text-2xl font-bold text-gray-900">{count}</div>
                 <div className="text-sm text-gray-600">{category}</div>
               </div>
             ))}

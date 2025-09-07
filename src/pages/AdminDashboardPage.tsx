@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '../services/api';
+import type { AdminStats, MerchantListResponse, VerificationQueueResponse, AuditLogResponse, Merchant, Verification, AuditLog } from '../types/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -19,22 +20,22 @@ import {
 export function AdminDashboardPage() {
   const [auditPage, setAuditPage] = useState(1);
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ['admin', 'stats'],
     queryFn: adminApi.getStats,
   });
 
-  const { data: merchantsData, isLoading: merchantsLoading } = useQuery({
+  const { data: merchantsData, isLoading: merchantsLoading } = useQuery<MerchantListResponse>({
     queryKey: ['admin', 'merchants'],
     queryFn: () => adminApi.getMerchants(1, 10),
   });
 
-  const { data: verificationQueue, isLoading: queueLoading } = useQuery({
+  const { data: verificationQueue, isLoading: queueLoading } = useQuery<VerificationQueueResponse>({
     queryKey: ['admin', 'verification-queue'],
     queryFn: adminApi.getVerificationQueue,
   });
 
-  const { data: auditLogs, isLoading: auditLoading } = useQuery({
+  const { data: auditLogs, isLoading: auditLoading } = useQuery<AuditLogResponse>({
     queryKey: ['admin', 'audit', auditPage],
     queryFn: () => adminApi.getAuditLogs({ page: auditPage, limit: 20 }),
   });
@@ -150,7 +151,7 @@ export function AdminDashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {merchantsData?.merchants.map((merchant: any) => (
+                  {merchantsData?.merchants.map((merchant: Merchant) => (
                     <div key={merchant.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center space-x-3">
                         <Building2 className="h-8 w-8 text-gray-400" />
@@ -207,7 +208,7 @@ export function AdminDashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {verificationQueue?.verifications.map((verification: any) => (
+                  {verificationQueue?.verifications.map((verification: Verification) => (
                     <div key={verification.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
                         <p className="font-medium text-gray-900">{verification.merchant.legalName}</p>
@@ -253,7 +254,7 @@ export function AdminDashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {auditLogs?.logs.map((log: any) => (
+                  {auditLogs?.logs.map((log: AuditLog) => (
                     <div key={log.id} className="flex items-center justify-between p-3 border rounded text-sm">
                       <div className="flex items-center space-x-3">
                         <Badge variant="outline">{log.action}</Badge>

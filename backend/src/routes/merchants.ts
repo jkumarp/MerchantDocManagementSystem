@@ -93,15 +93,15 @@ router.patch('/:merchantId', requireAuth, requireMerchantAccess, requirePerm(PER
     const updateData: Prisma.MerchantUpdateInput = {
       ...(data.legalName !== undefined && { legalName: data.legalName }),
       ...(data.businessType !== undefined && { businessType: data.businessType }),
-      ...(data.gstin !== undefined && { gstin: data.gstin ?? null }),
+      ...(data.gstin !== undefined && { gstin: data.gstin || null }),
       ...(data.addressLine1 !== undefined && { addressLine1: data.addressLine1 }),
-      ...(data.addressLine2 !== undefined && { addressLine2: data.addressLine2 ?? null }),
+      ...(data.addressLine2 !== undefined && { addressLine2: data.addressLine2 || null }),
       ...(data.city !== undefined && { city: data.city }),
       ...(data.state !== undefined && { state: data.state }),
       ...(data.country !== undefined && { country: data.country }),
       ...(data.postalCode !== undefined && { postalCode: data.postalCode }),
       ...(data.contactEmail !== undefined && { contactEmail: data.contactEmail }),
-      ...(data.contactPhone !== undefined && { contactPhone: data.contactPhone ?? null }),
+      ...(data.contactPhone !== undefined && { contactPhone: data.contactPhone || null }),
     };
     const merchant = await prisma.merchant.update({
       where: { id: merchantId as string},

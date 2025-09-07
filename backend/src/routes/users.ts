@@ -160,9 +160,9 @@ router.patch('/:userId', requireAuth, requirePerm(PERMISSIONS.USER_MANAGE), asyn
     }
 
     const updateData: Prisma.UserUpdateInput = {
-      ...(data.name !== undefined && { name: { set: data.name } }),
-      ...(data.role !== undefined && { role: { set: data.role } }),
-      ...(data.isActive !== undefined && { isActive: { set: data.isActive } }),
+      ...(data.name !== undefined && { name: data.name }),
+      ...(data.role !== undefined && { role: data.role }),
+      ...(data.isActive !== undefined && { isActive: data.isActive }),
     };
     const updatedUser = await prisma.user.update({
       where: { id: userId as string},

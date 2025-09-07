@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { merchantApi } from '../services/api';
+import type { Merchant } from '../types/api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -32,29 +33,32 @@ export function MerchantProfilePage() {
     contactPhone: '',
   });
 
-  const { data: merchant, isLoading } = useQuery({
+  const { data: merchant, isLoading } = useQuery<Merchant>({
     queryKey: ['merchant', merchantId],
     queryFn: () => merchantApi.get(merchantId!),
     enabled: !!merchantId,
-    onSuccess: (data) => {
-      setFormData({
-        legalName: data.legalName || '',
-        businessType: data.businessType || '',
-        gstin: data.gstin || '',
-        addressLine1: data.addressLine1 || '',
-        addressLine2: data.addressLine2 || '',
-        city: data.city || '',
-        state: data.state || '',
-        country: data.country || '',
-        postalCode: data.postalCode || '',
-        contactEmail: data.contactEmail || '',
-        contactPhone: data.contactPhone || '',
-      });
-    },
   });
 
+  React.useEffect(() => {
+    if (merchant) {
+      setFormData({
+        legalName: merchant.legalName || '',
+        businessType: merchant.businessType || '',
+        gstin: merchant.gstin || '',
+        addressLine1: merchant.addressLine1 || '',
+        addressLine2: merchant.addressLine2 || '',
+        city: merchant.city || '',
+        state: merchant.state || '',
+        country: merchant.country || '',
+        postalCode: merchant.postalCode || '',
+        contactEmail: merchant.contactEmail || '',
+        contactPhone: merchant.contactPhone || '',
+      });
+    }
+  }, [merchant]);
+
   const updateMutation = useMutation({
-    mutationFn: (data: any) => merchantApi.update(merchantId!, data),
+    mutationFn: (data: Partial<Merchant>) => merchantApi.update(merchantId!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['merchant', merchantId] });
       setIsEditing(false);

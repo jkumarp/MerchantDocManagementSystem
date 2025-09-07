@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { userApi } from '../services/api';
+import type { UserListResponse, UserItem, CreateUserResponse } from '../types/api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -26,7 +27,7 @@ export function UsersPage() {
   const [newUserName, setNewUserName] = useState('');
   const [newUserRole, setNewUserRole] = useState('');
 
-  const { data: usersData, isLoading } = useQuery({
+  const { data: usersData, isLoading } = useQuery<UserListResponse>({
     queryKey: ['users', user?.merchantId, page],
     queryFn: () => userApi.list(user!.merchantId!, page, 10),
     enabled: !!user?.merchantId,
@@ -34,7 +35,7 @@ export function UsersPage() {
 
   const createUserMutation = useMutation({
     mutationFn: (data: any) => userApi.create(data),
-    onSuccess: (data) => {
+    onSuccess: (data: CreateUserResponse) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setIsCreateOpen(false);
       setNewUserEmail('');
@@ -224,7 +225,7 @@ export function UsersPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {usersData?.users.map((userItem: any) => (
+              {usersData?.users.map((userItem: UserItem) => (
                 <div key={userItem.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">

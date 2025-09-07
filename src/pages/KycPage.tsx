@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { kycApi } from '../services/api';
+import type { KycStatusResponse, PanVerifyResponse, AadhaarInitResponse, AadhaarVerifyResponse } from '../types/api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -26,7 +27,7 @@ export function KycPage() {
   const [otp, setOtp] = useState('');
   const [showOtpInput, setShowOtpInput] = useState(false);
 
-  const { data: kycStatus, isLoading } = useQuery({
+  const { data: kycStatus, isLoading } = useQuery<KycStatusResponse>({
     queryKey: ['kyc', 'status', user?.merchantId],
     queryFn: () => kycApi.getStatus(user!.merchantId!),
     enabled: !!user?.merchantId,
@@ -35,7 +36,7 @@ export function KycPage() {
   const panVerifyMutation = useMutation({
     mutationFn: (data: { panNumber: string; name: string; merchantId: string }) =>
       kycApi.verifyPan(data),
-    onSuccess: (data) => {
+    onSuccess: (data: PanVerifyResponse) => {
       queryClient.invalidateQueries({ queryKey: ['kyc'] });
       toast({
         title: 'PAN Verification',
@@ -57,7 +58,7 @@ export function KycPage() {
   const aadhaarInitMutation = useMutation({
     mutationFn: (data: { aadhaarNumber: string; merchantId: string }) =>
       kycApi.initAadhaarOtp(data),
-    onSuccess: (data) => {
+    onSuccess: (data: AadhaarInitResponse) => {
       setOtpTxnId(data.txnId);
       setShowOtpInput(true);
       toast({
@@ -77,7 +78,7 @@ export function KycPage() {
   const aadhaarVerifyMutation = useMutation({
     mutationFn: (data: { txnId: string; otp: string; merchantId: string }) =>
       kycApi.verifyAadhaarOtp(data),
-    onSuccess: (data) => {
+    onSuccess: (data: AadhaarVerifyResponse) => {
       queryClient.invalidateQueries({ queryKey: ['kyc'] });
       toast({
         title: 'Aadhaar Verification',
