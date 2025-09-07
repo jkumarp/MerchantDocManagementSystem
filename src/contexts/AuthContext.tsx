@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authApi } from '../services/api';
+import {api, authApi } from '../services/api';
 import type { User, AuthResponse } from '../types/api';
 
 
@@ -16,7 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [ setAccessToken] = useState<string | null>(null);
+  const [, setAccessToken] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Auto-refresh token
@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(refreshData.user);
       setAccessToken(refreshData.accessToken);
       // Set token for API calls
-      authApi.setToken(refreshData.accessToken);
+      api.setToken(refreshData.accessToken);
     }
   }, [refreshData]);
 
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     onSuccess: (data: AuthResponse) => {
       setUser(data.user);
       setAccessToken(data.accessToken);
-      authApi.setToken(data.accessToken);
+      api.setToken(data.accessToken);
       queryClient.invalidateQueries({ queryKey: ['auth'] });
     },
   });
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     onSuccess: () => {
       setUser(null);
       setAccessToken(null);
-      authApi.setToken(null);
+      api.setToken(null);
       queryClient.clear();
     },
   });
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data: AuthResponse = await authApi.refresh();
     setUser(data.user);
     setAccessToken(data.accessToken);
-    authApi.setToken(data.accessToken);
+    api.setToken(data.accessToken);
   };
 
   return (

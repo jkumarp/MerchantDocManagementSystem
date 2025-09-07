@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { merchantApi } from '../services/api';
 import type { Merchant } from '../types/api';
 import { Button } from '../components/ui/button';
@@ -14,7 +13,6 @@ import { Building2, Save } from 'lucide-react';
 
 export function MerchantProfilePage() {
   const { merchantId } = useParams<{ merchantId: string }>();
-  const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

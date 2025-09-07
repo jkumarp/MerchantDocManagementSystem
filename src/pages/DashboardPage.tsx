@@ -1,4 +1,3 @@
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { merchantApi } from '../services/api';
@@ -8,9 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { LoadingSpinner } from '../components/ui/loading-spinner';
 import { 
   FileText, 
-  Users, 
   Shield, 
-  CheckCircle, 
   Clock, 
   AlertCircle,
   TrendingUp

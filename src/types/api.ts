@@ -124,6 +124,7 @@ export interface PaginatedResponse<T> {
     total: number;
     pages: number;
   };
+  data: T[];
 }
 
 export interface DocumentListResponse extends PaginatedResponse<Document> {

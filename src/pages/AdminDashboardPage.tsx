@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '../services/api';
 import type { AdminStats, MerchantListResponse, VerificationQueueResponse, AuditLogResponse, Merchant, Verification, AuditLog } from '../types/api';
@@ -12,13 +12,12 @@ import {
   FileText, 
   Shield, 
   Activity,
-  TrendingUp,
   Clock,
   CheckCircle
 } from 'lucide-react';
 
 export function AdminDashboardPage() {
-  const [auditPage, setAuditPage] = useState(1);
+  const [auditPage, ] = useState(1);
 
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ['admin', 'stats'],
@@ -158,7 +157,7 @@ export function AdminDashboardPage() {
                         <div>
                           <p className="font-medium text-gray-900">{merchant.legalName}</p>
                           <p className="text-sm text-gray-600">
-                            {merchant.contactEmail} • {merchant._count.users} users • {merchant._count.documents} docs
+                            {merchant.contactEmail} • {merchant._count?.users??0} users • {merchant._count?.documents??0} docs
                           </p>
                           <p className="text-xs text-gray-500">
                             Created {new Date(merchant.createdAt).toLocaleDateString()}
