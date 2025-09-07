@@ -9,8 +9,8 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   }
 
   try {
-    const claims = jwt.verify(auth[1], process.env.JWT_ACCESS_SECRET!) as JwtClaims;
-    (req as AuthenticatedRequest).user = claims;
+    const claims = jwt.verify(auth[1] as string, process.env.JWT_ACCESS_SECRET!) as JwtClaims;
+    (req as unknown as AuthenticatedRequest).user  = claims;
     return next();
   } catch (error) {
     return res.status(401).json({ error: 'Invalid/expired token' });
@@ -19,7 +19,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 
 export function requirePerm(...needed: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const user = (req as AuthenticatedRequest).user;
+    const user = (req as unknown as AuthenticatedRequest).user;
     if (!user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
@@ -39,7 +39,7 @@ export function requirePerm(...needed: string[]) {
 }
 
 export function requireMerchantAccess(req: Request, res: Response, next: NextFunction) {
-  const user = (req as AuthenticatedRequest).user;
+  const user = (req as unknown as AuthenticatedRequest).user;
   const merchantId = req.params.merchantId || req.body.merchantId || req.query.merchantId;
 
   // Admin can access any merchant

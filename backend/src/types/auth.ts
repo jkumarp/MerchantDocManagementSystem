@@ -23,7 +23,7 @@ export const PERMISSIONS = {
   SETTINGS_WRITE: 'settings:write',
 } as const;
 
-export const ROLE_PERMISSIONS = {
+export const ROLE_PERMISSIONS: Record<string, string[]> = {
   ADMIN: Object.values(PERMISSIONS),
   MERCHANT_ADMIN: [
     PERMISSIONS.MERCHANT_READ,

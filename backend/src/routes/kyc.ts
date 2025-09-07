@@ -34,7 +34,7 @@ router.post('/pan/verify', requireAuth, requireMerchantAccess, requirePerm(PERMI
     const user = (req as any).user;
 
     // Call KYC provider
-    const result = await kycProvider.verifyPAN({ pan: panNumber, name, dob });
+    const result = await kycProvider.verifyPAN({ pan: panNumber, name });
 
     // Update or create KYC record
     const kyc = await prisma.kyc.upsert({
@@ -72,8 +72,8 @@ router.post('/pan/verify', requireAuth, requireMerchantAccess, requirePerm(PERMI
         merchantId,
         action: 'KYC.PAN_VERIFY',
         targetId: kyc.id,
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
+        ip: req.ip??null,
+        userAgent: req.headers['user-agent']??null,
         metadata: {
           panMasked: result.maskedPan,
           status: result.status,
@@ -155,9 +155,9 @@ router.post('/aadhaar/otp/verify', requireAuth, requireMerchantAccess, requirePe
         actorId: user.sub,
         merchantId,
         action: 'KYC.AADHAAR_VERIFY',
-        targetId: kyc.id,
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
+        targetId: kyc.id??null,
+        ip: req.ip??null,
+        userAgent: req.headers['user-agent']??null,
         metadata: {
           last4: result.last4,
           status: result.status,
@@ -165,14 +165,14 @@ router.post('/aadhaar/otp/verify', requireAuth, requireMerchantAccess, requirePe
       },
     });
 
-    res.json({
+    return res.json({
       status: result.status,
       last4: result.last4,
       message: result.status === 'VERIFIED' ? 'Aadhaar verified successfully' : 'Aadhaar verification failed',
     });
   } catch (error) {
     console.error('Aadhaar verify error:', error);
-    res.status(500).json({ error: 'Aadhaar verification failed' });
+    return res.status(500).json({ error: 'Aadhaar verification failed' });
   }
 });
 
@@ -202,7 +202,7 @@ router.get('/status', requireAuth, async (req, res) => {
     const overallStatus = (kyc.panStatus === 'VERIFIED' && kyc.aadhaarStatus === 'VERIFIED') 
       ? 'COMPLETE' : 'PENDING';
 
-    res.json({
+    return res.json({
       panStatus: kyc.panStatus || 'PENDING',
       aadhaarStatus: kyc.aadhaarStatus || 'PENDING',
       overallStatus,
@@ -211,7 +211,7 @@ router.get('/status', requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Get KYC status error:', error);
-    res.status(500).json({ error: 'Failed to get KYC status' });
+    return res.status(500).json({ error: 'Failed to get KYC status' });
   }
 });
 

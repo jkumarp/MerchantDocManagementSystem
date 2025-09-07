@@ -12,7 +12,6 @@ import {
   LayoutDashboard, 
   Settings,
   LogOut,
-  Menu
 } from 'lucide-react';
 
 interface LayoutProps {

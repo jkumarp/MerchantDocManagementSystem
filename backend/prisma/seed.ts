@@ -24,9 +24,10 @@ async function main() {
 
   // Create sample merchant
   const merchant = await prisma.merchant.upsert({
-    where: { contactEmail: 'contact@acmecorp.com' },
+    where: { contactEmail: 'contact@acmecorp.com',id:'1' },
     update: {},
     create: {
+      
       legalName: 'ACME Corporation',
       businessType: 'Private Limited',
       gstin: '29ABCDE1234F1Z5',

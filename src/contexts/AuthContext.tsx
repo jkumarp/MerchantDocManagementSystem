@@ -26,7 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [ setAccessToken] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Auto-refresh token

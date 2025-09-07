@@ -6,12 +6,12 @@ import crypto from 'crypto';
 import { prisma } from '../server.js';
 import { requireAuth, requirePerm, requireMerchantAccess } from '../middleware/auth.js';
 import { PERMISSIONS } from '../types/auth.js';
-
+import { Prisma } from "@prisma/client";
 const router = Router();
 
 // Initialize S3 client
 const s3Client = new S3Client({
-  endpoint: process.env.S3_ENDPOINT,
+  endpoint: process.env.S3_ENDPOINT!,
   region: process.env.S3_REGION || 'us-east-1',
   credentials: {
     accessKeyId: process.env.S3_ACCESS_KEY!,
@@ -67,14 +67,14 @@ router.post('/presign', requireAuth, requirePerm(PERMISSIONS.DOC_UPLOAD), async 
 
     const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 }); // 5 minutes
 
-    res.json({
+    return res.json({
       uploadUrl,
       storageKey,
       expiresIn: 300,
     });
   } catch (error) {
     console.error('Presign error:', error);
-    res.status(500).json({ error: 'Failed to generate upload URL' });
+    return res.status(500).json({ error: 'Failed to generate upload URL' });
   }
 });
 
@@ -96,8 +96,9 @@ router.post('/', requireAuth, requirePerm(PERMISSIONS.DOC_UPLOAD), async (req, r
     const document = await prisma.document.create({
       data: {
         ...data,
-        merchantId: user.mid,
-        uploadedById: user.sub,
+        merchantId: user.mid as string,
+        uploadedById: user.sub as string,
+        metadata:data.metadata??Prisma.JsonNull,
       },
     });
 
@@ -108,8 +109,8 @@ router.post('/', requireAuth, requirePerm(PERMISSIONS.DOC_UPLOAD), async (req, r
         merchantId: user.mid,
         action: 'DOC.UPLOAD',
         targetId: document.id,
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
+        ip: req.ip ?? null,
+        userAgent: req.headers['user-agent'] ?? null,
         metadata: {
           filename: data.filename,
           category: data.category,
@@ -118,10 +119,10 @@ router.post('/', requireAuth, requirePerm(PERMISSIONS.DOC_UPLOAD), async (req, r
       },
     });
 
-    res.status(201).json(document);
+    return res.status(201).json(document);
   } catch (error) {
     console.error('Save document error:', error);
-    res.status(500).json({ error: 'Failed to save document' });
+    return res.status(500).json({ error: 'Failed to save document' });
   }
 });
 
@@ -164,7 +165,7 @@ router.get('/', requireAuth, requirePerm(PERMISSIONS.DOC_VIEW), async (req, res)
       prisma.document.count({ where }),
     ]);
 
-    res.json({
+    return res.json({
       documents,
       pagination: {
         page,
@@ -175,7 +176,7 @@ router.get('/', requireAuth, requirePerm(PERMISSIONS.DOC_VIEW), async (req, res)
     });
   } catch (error) {
     console.error('List documents error:', error);
-    res.status(500).json({ error: 'Failed to list documents' });
+    return res.status(500).json({ error: 'Failed to list documents' });
   }
 });
 
@@ -186,7 +187,7 @@ router.get('/:documentId/download', requireAuth, requirePerm(PERMISSIONS.DOC_VIE
     const user = (req as any).user;
 
     const document = await prisma.document.findUnique({
-      where: { id: documentId },
+      where: { id: documentId as string },
     });
 
     if (!document || document.isDeleted) {
@@ -211,21 +212,21 @@ router.get('/:documentId/download', requireAuth, requirePerm(PERMISSIONS.DOC_VIE
         actorId: user.sub,
         merchantId: document.merchantId,
         action: 'DOC.DOWNLOAD',
-        targetId: documentId,
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
+        targetId: documentId ?? null,
+        ip: req.ip ?? null,
+        userAgent: req.headers['user-agent'] ?? null,
         metadata: { filename: document.filename },
       },
     });
 
-    res.json({
+    return res.json({
       downloadUrl,
       filename: document.filename,
       expiresIn: 300,
     });
   } catch (error) {
     console.error('Download document error:', error);
-    res.status(500).json({ error: 'Failed to generate download URL' });
+    return res.status(500).json({ error: 'Failed to generate download URL' });
   }
 });
 
@@ -236,7 +237,7 @@ router.delete('/:documentId', requireAuth, requirePerm(PERMISSIONS.DOC_DELETE), 
     const user = (req as any).user;
 
     const document = await prisma.document.findUnique({
-      where: { id: documentId },
+      where: { id: documentId as string},
     });
 
     if (!document) {
@@ -249,7 +250,7 @@ router.delete('/:documentId', requireAuth, requirePerm(PERMISSIONS.DOC_DELETE), 
     }
 
     await prisma.document.update({
-      where: { id: documentId },
+      where: { id: documentId  as string},
       data: { isDeleted: true },
     });
 
@@ -259,17 +260,17 @@ router.delete('/:documentId', requireAuth, requirePerm(PERMISSIONS.DOC_DELETE), 
         actorId: user.sub,
         merchantId: document.merchantId,
         action: 'DOC.DELETE',
-        targetId: documentId,
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
+        targetId: documentId ?? null,
+        ip: req.ip ?? null,
+        userAgent: req.headers['user-agent'] ?? null,
         metadata: { filename: document.filename },
       },
     });
 
-    res.json({ message: 'Document deleted successfully' });
+    return res.json({ message: 'Document deleted successfully' });
   } catch (error) {
     console.error('Delete document error:', error);
-    res.status(500).json({ error: 'Failed to delete document' });
+    return res.status(500).json({ error: 'Failed to delete document' });
   }
 });
 

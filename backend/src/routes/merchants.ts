@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../server.js';
 import { requireAuth, requirePerm, requireMerchantAccess } from '../middleware/auth.js';
 import { PERMISSIONS } from '../types/auth.js';
+import { Prisma } from '@prisma/client';
 
 const router = Router();
 
@@ -28,7 +29,12 @@ router.post('/', requireAuth, requirePerm(PERMISSIONS.MERCHANT_WRITE), async (re
     const data = createMerchantSchema.parse(req.body);
 
     const merchant = await prisma.merchant.create({
-      data,
+      data: {
+        ...data,
+        gstin: data.gstin ?? null,
+        addressLine2: data.addressLine2 ?? null,
+        contactPhone: data.contactPhone ?? null,
+      },
     });
 
     // Log creation
@@ -37,8 +43,8 @@ router.post('/', requireAuth, requirePerm(PERMISSIONS.MERCHANT_WRITE), async (re
         actorId: (req as any).user.sub,
         action: 'MERCHANT.CREATE',
         targetId: merchant.id,
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
+        ip: req.ip ?? null,
+        userAgent: req.headers['user-agent'] ?? null,
       },
     });
 
@@ -55,7 +61,7 @@ router.get('/:merchantId', requireAuth, requireMerchantAccess, async (req, res) 
     const { merchantId } = req.params;
 
     const merchant = await prisma.merchant.findUnique({
-      where: { id: merchantId },
+      where: { id: merchantId as string},
       include: {
         kyc: true,
         _count: {
@@ -71,10 +77,10 @@ router.get('/:merchantId', requireAuth, requireMerchantAccess, async (req, res) 
       return res.status(404).json({ error: 'Merchant not found' });
     }
 
-    res.json(merchant);
+    return res.json(merchant);
   } catch (error) {
     console.error('Get merchant error:', error);
-    res.status(500).json({ error: 'Failed to get merchant' });
+    return res.status(500).json({ error: 'Failed to get merchant' });
   }
 });
 
@@ -84,21 +90,34 @@ router.patch('/:merchantId', requireAuth, requireMerchantAccess, requirePerm(PER
     const { merchantId } = req.params;
     const data = updateMerchantSchema.parse(req.body);
 
+    const updateData: Prisma.MerchantUpdateInput = {
+      ...(data.legalName !== undefined && { legalName: data.legalName }),
+      ...(data.businessType !== undefined && { businessType: data.businessType }),
+      ...(data.gstin !== undefined && { gstin: data.gstin ?? null }),
+      ...(data.addressLine1 !== undefined && { addressLine1: data.addressLine1 }),
+      ...(data.addressLine2 !== undefined && { addressLine2: data.addressLine2 ?? null }),
+      ...(data.city !== undefined && { city: data.city }),
+      ...(data.state !== undefined && { state: data.state }),
+      ...(data.country !== undefined && { country: data.country }),
+      ...(data.postalCode !== undefined && { postalCode: data.postalCode }),
+      ...(data.contactEmail !== undefined && { contactEmail: data.contactEmail }),
+      ...(data.contactPhone !== undefined && { contactPhone: data.contactPhone ?? null }),
+    };
     const merchant = await prisma.merchant.update({
-      where: { id: merchantId },
-      data,
+      where: { id: merchantId as string},
+      data:updateData,
     });
 
     // Log update
     await prisma.auditLog.create({
       data: {
         actorId: (req as any).user.sub,
-        merchantId,
+        merchantId: null,
         action: 'MERCHANT.UPDATE',
-        targetId: merchantId,
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
-        metadata: { changes: Object.keys(data) },
+        targetId: merchantId ?? null,
+        ip: req.ip ?? null,
+        userAgent: req.headers['user-agent'] ?? null,
+        metadata: { changes: Object.keys(data)} ,
       },
     });
 
@@ -116,20 +135,20 @@ router.get('/:merchantId/summary', requireAuth, requireMerchantAccess, async (re
 
     const [merchant, kycStatus, documentCounts, recentDocs] = await Promise.all([
       prisma.merchant.findUnique({
-        where: { id: merchantId },
+        where: { id: merchantId as string},
         select: { id: true, legalName: true, createdAt: true },
       }),
       prisma.kyc.findUnique({
-        where: { merchantId },
+        where: {id: merchantId as string},
         select: { panStatus: true, aadhaarStatus: true },
       }),
       prisma.document.groupBy({
         by: ['category'],
-        where: { merchantId, isDeleted: false },
+        where: {id: merchantId as string, isDeleted: false },
         _count: { id: true },
       }),
       prisma.document.findMany({
-        where: { merchantId, isDeleted: false },
+        where: { id: merchantId as string, isDeleted: false },
         orderBy: { createdAt: 'desc' },
         take: 5,
         select: {
@@ -164,10 +183,10 @@ router.get('/:merchantId/summary', requireAuth, requireMerchantAccess, async (re
       },
     };
 
-    res.json(summary);
+    return res.json(summary);
   } catch (error) {
     console.error('Get merchant summary error:', error);
-    res.status(500).json({ error: 'Failed to get merchant summary' });
+    return res.status(500).json({ error: 'Failed to get merchant summary' });
   }
 });
 

@@ -166,6 +166,7 @@ class ApiClient {
 
 export const api = new ApiClient();
 
+
 // Convenience exports
 export const authApi = api.auth;
 export const merchantApi = api.merchants;

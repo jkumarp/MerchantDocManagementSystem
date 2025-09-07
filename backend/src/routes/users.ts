@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import { prisma } from '../server.js';
 import { requireAuth, requirePerm, requireMerchantAccess } from '../middleware/auth.js';
 import { PERMISSIONS } from '../types/auth.js';
-
+import { Prisma } from '@prisma/client';
 const router = Router();
 
 const createUserSchema = z.object({
@@ -68,8 +68,8 @@ router.post('/', requireAuth, requirePerm(PERMISSIONS.USER_MANAGE), async (req, 
         merchantId,
         action: 'USER.CREATE',
         targetId: newUser.id,
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
+        ip: req.ip?? null,
+        userAgent: req.headers['user-agent']?? null,
         metadata: { email, role },
       },
     });
@@ -77,7 +77,7 @@ router.post('/', requireAuth, requirePerm(PERMISSIONS.USER_MANAGE), async (req, 
     // In a real app, send invitation email here
     console.log(`Invitation for ${email}: temp password is ${tempPassword}`);
 
-    res.status(201).json({
+    return res.status(201).json({
       id: newUser.id,
       email: newUser.email,
       name: newUser.name,
@@ -87,7 +87,7 @@ router.post('/', requireAuth, requirePerm(PERMISSIONS.USER_MANAGE), async (req, 
     });
   } catch (error) {
     console.error('Create user error:', error);
-    res.status(500).json({ error: 'Failed to create user' });
+    return res.status(500).json({ error: 'Failed to create user' });
   }
 });
 
@@ -101,7 +101,7 @@ router.get('/merchant/:merchantId', requireAuth, requireMerchantAccess, async (r
 
     const [users, total] = await Promise.all([
       prisma.user.findMany({
-        where: { merchantId },
+        where: { id:merchantId as string},
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
@@ -115,7 +115,7 @@ router.get('/merchant/:merchantId', requireAuth, requireMerchantAccess, async (r
           twoFASecret: true,
         },
       }),
-      prisma.user.count({ where: { merchantId } }),
+      prisma.user.count({ where: { id:merchantId as string } }),
     ]);
 
     const sanitizedUsers = users.map(user => ({
@@ -146,7 +146,7 @@ router.patch('/:userId', requireAuth, requirePerm(PERMISSIONS.USER_MANAGE), asyn
     const data = updateUserSchema.parse(req.body);
 
     const targetUser = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: userId as string},
     });
 
     if (!targetUser) {
@@ -159,9 +159,14 @@ router.patch('/:userId', requireAuth, requirePerm(PERMISSIONS.USER_MANAGE), asyn
       return res.status(403).json({ error: 'Cannot update this user' });
     }
 
+    const updateData: Prisma.UserUpdateInput = {
+      ...(data.name !== undefined && { name: { set: data.name } }),
+      ...(data.role !== undefined && { role: { set: data.role } }),
+      ...(data.isActive !== undefined && { isActive: { set: data.isActive } }),
+    };
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data,
+      where: { id: userId as string},
+      data:updateData,
       select: {
         id: true,
         email: true,
@@ -178,17 +183,17 @@ router.patch('/:userId', requireAuth, requirePerm(PERMISSIONS.USER_MANAGE), asyn
         actorId: actor.sub,
         merchantId: targetUser.merchantId,
         action: 'USER.UPDATE',
-        targetId: userId,
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
+        targetId: userId?? null,
+        ip: req.ip?? null,
+        userAgent: req.headers['user-agent']?? null,
         metadata: { changes: Object.keys(data) },
       },
     });
 
-    res.json(updatedUser);
+    return res.json(updatedUser);
   } catch (error) {
     console.error('Update user error:', error);
-    res.status(500).json({ error: 'Failed to update user' });
+    return res.status(500).json({ error: 'Failed to update user' });
   }
 });
 
@@ -217,10 +222,10 @@ router.post('/accept-invite', async (req, res) => {
       },
     });
 
-    res.json({ message: 'Invitation accepted successfully' });
+    return res.json({ message: 'Invitation accepted successfully' });
   } catch (error) {
     console.error('Accept invite error:', error);
-    res.status(500).json({ error: 'Failed to accept invitation' });
+    return res.status(500).json({ error: 'Failed to accept invitation' });
   }
 });
 

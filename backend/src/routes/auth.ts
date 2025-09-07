@@ -51,10 +51,10 @@ router.post('/register-admin', async (req, res) => {
       },
     });
 
-    res.status(201).json({ message: 'Admin user created successfully', userId: user.id });
+    return res.status(201).json({ message: 'Admin user created successfully', userId: user.id });
   } catch (error) {
     console.error('Register admin error:', error);
-    res.status(500).json({ error: 'Failed to create admin user' });
+    return res.status(500).json({ error: 'Failed to create admin user' });
   }
 });
 
@@ -104,8 +104,8 @@ router.post('/login', async (req, res) => {
         userId: user.id,
         tokenHash,
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), // 30 days
-        userAgent: req.headers['user-agent'],
-        ip: req.ip,
+        userAgent: req.headers['user-agent']??null,
+        ip: req.ip??null,
       },
     });
 
@@ -136,12 +136,12 @@ router.post('/login', async (req, res) => {
         actorId: user.id,
         merchantId: user.merchantId,
         action: 'AUTH.LOGIN',
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
+        ip: req.ip??null,
+        userAgent: req.headers['user-agent']??null,
       },
     });
 
-    res.json({
+    return res.json({
       accessToken,
       user: {
         id: user.id,
@@ -154,7 +154,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed' });
+    return res.status(500).json({ error: 'Login failed' });
   }
 });
 
@@ -203,8 +203,8 @@ router.post('/refresh', async (req, res) => {
         userId: storedToken.userId,
         tokenHash: newTokenHash,
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
-        userAgent: req.headers['user-agent'],
-        ip: req.ip,
+        userAgent: req.headers['user-agent']??null,
+        ip: req.ip??null,
       },
     });
 
@@ -229,7 +229,7 @@ router.post('/refresh', async (req, res) => {
       maxAge: 1000 * 60 * 60 * 24 * 30,
     });
 
-    res.json({
+    return res.json({
       accessToken,
       user: {
         id: storedToken.user.id,
@@ -242,7 +242,7 @@ router.post('/refresh', async (req, res) => {
     });
   } catch (error) {
     console.error('Refresh error:', error);
-    res.status(500).json({ error: 'Token refresh failed' });
+    return res.status(500).json({ error: 'Token refresh failed' });
   }
 });
 
@@ -288,13 +288,13 @@ router.post('/2fa/setup', requireAuth, async (req, res) => {
 
     const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url!);
 
-    res.json({
+    return res.json({
       secret: secret.base32,
       qrCode: qrCodeUrl,
     });
   } catch (error) {
     console.error('2FA setup error:', error);
-    res.status(500).json({ error: '2FA setup failed' });
+    return res.status(500).json({ error: '2FA setup failed' });
   }
 });
 
@@ -323,10 +323,10 @@ router.post('/2fa/verify', requireAuth, async (req, res) => {
       data: { twoFASecret: secret },
     });
 
-    res.json({ message: '2FA enabled successfully' });
+    return res.json({ message: '2FA enabled successfully' });
   } catch (error) {
     console.error('2FA verify error:', error);
-    res.status(500).json({ error: '2FA verification failed' });
+    return res.status(500).json({ error: '2FA verification failed' });
   }
 });
 

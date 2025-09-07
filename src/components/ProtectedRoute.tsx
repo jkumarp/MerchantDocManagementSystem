@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
   roles?: string[];
 }
 
-export function ProtectedRoute({ children, permissions = [], roles = [] }: ProtectedRouteProps) {
+export function ProtectedRoute({ children,  roles = [] }: ProtectedRouteProps) {
   const { user } = useAuth();
 
   if (!user) {
