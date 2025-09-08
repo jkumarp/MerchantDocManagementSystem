@@ -27,6 +27,49 @@ const aadhaarVerifySchema = z.object({
   merchantId: z.string(),
 });
 
+/**
+ * @swagger
+ * /api/kyc/pan/verify:
+ *   post:
+ *     summary: Verify PAN
+ *     description: Verify PAN card details using external KYC provider
+ *     tags: [KYC]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PanVerifyRequest'
+ *     responses:
+ *       200:
+ *         description: PAN verification result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [VERIFIED, FAILED, PENDING]
+ *                   example: VERIFIED
+ *                 maskedPan:
+ *                   type: string
+ *                   example: ABCXX1234XX5
+ *                   description: Masked PAN number for security
+ *                 message:
+ *                   type: string
+ *                   example: PAN verified successfully
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Verify PAN
 router.post('/pan/verify', requireAuth, requireMerchantAccess, requirePerm(PERMISSIONS.KYC_VERIFY), async (req, res) => {
   try {
@@ -92,6 +135,49 @@ router.post('/pan/verify', requireAuth, requireMerchantAccess, requirePerm(PERMI
   }
 });
 
+/**
+ * @swagger
+ * /api/kyc/aadhaar/otp/init:
+ *   post:
+ *     summary: Initialize Aadhaar OTP
+ *     description: Send OTP to mobile number linked with Aadhaar
+ *     tags: [KYC]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AadhaarInitRequest'
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 txnId:
+ *                   type: string
+ *                   example: TXN_1642234567890_abc123
+ *                   description: Transaction ID for OTP verification
+ *                 message:
+ *                   type: string
+ *                   example: OTP sent successfully
+ *                 maskedAadhaar:
+ *                   type: string
+ *                   example: XXXX-XXXX-1234
+ *                   description: Masked Aadhaar number
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Initialize Aadhaar OTP
 router.post('/aadhaar/otp/init', requireAuth, requireMerchantAccess, requirePerm(PERMISSIONS.KYC_VERIFY), async (req, res) => {
   try {
@@ -110,6 +196,49 @@ router.post('/aadhaar/otp/init', requireAuth, requireMerchantAccess, requirePerm
   }
 });
 
+/**
+ * @swagger
+ * /api/kyc/aadhaar/otp/verify:
+ *   post:
+ *     summary: Verify Aadhaar OTP
+ *     description: Verify OTP and complete Aadhaar verification
+ *     tags: [KYC]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AadhaarVerifyRequest'
+ *     responses:
+ *       200:
+ *         description: Aadhaar verification result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [VERIFIED, FAILED]
+ *                   example: VERIFIED
+ *                 last4:
+ *                   type: string
+ *                   example: '1234'
+ *                   description: Last 4 digits of Aadhaar
+ *                 message:
+ *                   type: string
+ *                   example: Aadhaar verified successfully
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Verify Aadhaar OTP
 router.post('/aadhaar/otp/verify', requireAuth, requireMerchantAccess, requirePerm(PERMISSIONS.KYC_VERIFY), async (req, res) => {
   try {
@@ -176,6 +305,59 @@ router.post('/aadhaar/otp/verify', requireAuth, requireMerchantAccess, requirePe
   }
 });
 
+/**
+ * @swagger
+ * /api/kyc/status:
+ *   get:
+ *     summary: Get KYC status
+ *     description: Get current KYC verification status for a merchant
+ *     tags: [KYC]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: merchantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Merchant ID
+ *     responses:
+ *       200:
+ *         description: KYC status information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 panStatus:
+ *                   type: string
+ *                   enum: [PENDING, VERIFIED, FAILED]
+ *                   example: VERIFIED
+ *                 aadhaarStatus:
+ *                   type: string
+ *                   enum: [PENDING, VERIFIED, FAILED]
+ *                   example: VERIFIED
+ *                 overallStatus:
+ *                   type: string
+ *                   enum: [PENDING, COMPLETE]
+ *                   example: COMPLETE
+ *                 panNumber:
+ *                   type: string
+ *                   nullable: true
+ *                   example: ABCXX1234XX5
+ *                   description: Masked PAN number
+ *                 aadhaarLast4:
+ *                   type: string
+ *                   nullable: true
+ *                   example: '1234'
+ *                   description: Last 4 digits of Aadhaar
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Get KYC status
 router.get('/status', requireAuth, async (req, res) => {
   try {

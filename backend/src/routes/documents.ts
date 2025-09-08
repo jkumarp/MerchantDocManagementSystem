@@ -38,6 +38,37 @@ const saveDocumentSchema = z.object({
   metadata: z.record(z.any()).optional(),
 });
 
+/**
+ * @swagger
+ * /api/docs/presign:
+ *   post:
+ *     summary: Get presigned upload URL
+ *     description: Generate a presigned URL for direct S3 document upload
+ *     tags: [Documents]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PresignRequest'
+ *     responses:
+ *       200:
+ *         description: Presigned URL generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PresignResponse'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Get presigned upload URL
 router.post('/presign', requireAuth, requirePerm(PERMISSIONS.DOC_UPLOAD), async (req, res) => {
   try {
@@ -78,6 +109,119 @@ router.post('/presign', requireAuth, requirePerm(PERMISSIONS.DOC_UPLOAD), async 
   }
 });
 
+/**
+ * @swagger
+ * /api/docs:
+ *   post:
+ *     summary: Save document metadata
+ *     description: Save document metadata after successful S3 upload
+ *     tags: [Documents]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [storageKey, category, filename, mimeType, sizeBytes, checksumSha256]
+ *             properties:
+ *               storageKey:
+ *                 type: string
+ *                 example: merchants/clp123merchant456/kyc/1642234567890-abc123.pdf
+ *                 description: S3 storage key from presign response
+ *               category:
+ *                 type: string
+ *                 enum: [KYC, CONTRACT, INVOICE, BANK, MISC]
+ *                 example: KYC
+ *               filename:
+ *                 type: string
+ *                 example: pan_card.pdf
+ *               mimeType:
+ *                 type: string
+ *                 example: application/pdf
+ *               sizeBytes:
+ *                 type: integer
+ *                 example: 1048576
+ *               checksumSha256:
+ *                 type: string
+ *                 pattern: '^[a-f0-9]{64}$'
+ *                 example: a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3
+ *               metadata:
+ *                 type: object
+ *                 additionalProperties: true
+ *                 example:
+ *                   description: PAN card for KYC verification
+ *                   tags: [identity, kyc]
+ *     responses:
+ *       201:
+ *         description: Document metadata saved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Document'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ *   get:
+ *     summary: List documents
+ *     description: Get paginated list of documents with optional filtering
+ *     tags: [Documents]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: merchantId
+ *         schema:
+ *           type: string
+ *         description: Filter by merchant ID (defaults to user's merchant)
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           enum: [KYC, CONTRACT, INVOICE, BANK, MISC]
+ *         description: Filter by document category
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: List of documents
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 documents:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Document'
+ *                 pagination:
+ *                   $ref: '#/components/schemas/PaginationMeta'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Save document metadata after upload
 router.post('/', requireAuth, requirePerm(PERMISSIONS.DOC_UPLOAD), async (req, res) => {
   try {
@@ -180,6 +324,52 @@ router.get('/', requireAuth, requirePerm(PERMISSIONS.DOC_VIEW), async (req, res)
   }
 });
 
+/**
+ * @swagger
+ * /api/docs/{documentId}/download:
+ *   get:
+ *     summary: Get document download URL
+ *     description: Generate a presigned URL for document download
+ *     tags: [Documents]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: documentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Document ID
+ *     responses:
+ *       200:
+ *         description: Download URL generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 downloadUrl:
+ *                   type: string
+ *                   format: uri
+ *                   example: https://s3.amazonaws.com/bucket/key?X-Amz-Algorithm=...
+ *                   description: Presigned URL for document download
+ *                 filename:
+ *                   type: string
+ *                   example: pan_card.pdf
+ *                   description: Original filename
+ *                 expiresIn:
+ *                   type: integer
+ *                   example: 300
+ *                   description: URL expiration time in seconds
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Get presigned download URL
 router.get('/:documentId/download', requireAuth, requirePerm(PERMISSIONS.DOC_VIEW), async (req, res) => {
   try {
@@ -230,6 +420,38 @@ router.get('/:documentId/download', requireAuth, requirePerm(PERMISSIONS.DOC_VIE
   }
 });
 
+/**
+ * @swagger
+ * /api/docs/{documentId}:
+ *   delete:
+ *     summary: Delete document
+ *     description: Soft delete a document (marks as deleted but preserves data)
+ *     tags: [Documents]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: documentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Document ID
+ *     responses:
+ *       200:
+ *         description: Document deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MessageResponse'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Soft delete document
 router.delete('/:documentId', requireAuth, requirePerm(PERMISSIONS.DOC_DELETE), async (req, res) => {
   try {

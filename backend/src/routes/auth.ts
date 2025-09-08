@@ -27,6 +27,53 @@ const setup2FASchema = z.object({
   totpCode: z.string().length(6),
 });
 
+/**
+ * @swagger
+ * /api/auth/register-admin:
+ *   post:
+ *     summary: Bootstrap admin user
+ *     description: Create the first admin user (only works if no admin exists)
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password, name]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: admin@dms.com
+ *               password:
+ *                 type: string
+ *                 minLength: 12
+ *                 example: admin123456789
+ *               name:
+ *                 type: string
+ *                 minLength: 2
+ *                 example: System Administrator
+ *     responses:
+ *       201:
+ *         description: Admin user created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Admin user created successfully
+ *                 userId:
+ *                   type: string
+ *                   example: clp123admin456
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Bootstrap admin user
 router.post('/register-admin', async (req, res) => {
   try {
@@ -58,6 +105,53 @@ router.post('/register-admin', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: User login
+ *     description: Authenticate user with email/password and optional 2FA code
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *         headers:
+ *           Set-Cookie:
+ *             description: HTTP-only refresh token cookie
+ *             schema:
+ *               type: string
+ *               example: rt=token123.refresh456; HttpOnly; SameSite=Strict; Path=/api/auth
+ *       401:
+ *         description: Invalid credentials or 2FA code required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - $ref: '#/components/schemas/ErrorResponse'
+ *                 - type: object
+ *                   properties:
+ *                     error:
+ *                       type: string
+ *                       example: 2FA code required
+ *                     requires2FA:
+ *                       type: boolean
+ *                       example: true
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 router.post('/login', async (req, res) => {
   try {
     const { email, password, totpCode } = loginSchema.parse(req.body);
@@ -158,6 +252,35 @@ router.post('/login', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     description: Get a new access token using the refresh token cookie
+ *     tags: [Authentication]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *         headers:
+ *           Set-Cookie:
+ *             description: New HTTP-only refresh token cookie
+ *             schema:
+ *               type: string
+ *       401:
+ *         description: Invalid or expired refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 router.post('/refresh', async (req, res) => {
   try {
     const refreshCookie = req.cookies.rt;
@@ -246,6 +369,27 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: User logout
+ *     description: Revoke refresh token and clear authentication cookies
+ *     tags: [Authentication]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MessageResponse'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 router.post('/logout', requireAuth, async (req, res) => {
   try {
     const refreshCookie = req.cookies.rt;
@@ -267,6 +411,35 @@ router.post('/logout', requireAuth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/auth/2fa/setup:
+ *   post:
+ *     summary: Setup 2FA
+ *     description: Generate TOTP secret and QR code for 2FA setup
+ *     tags: [Authentication]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 2FA setup data generated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Setup2FAResponse'
+ *       400:
+ *         description: 2FA already enabled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 router.post('/2fa/setup', requireAuth, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
@@ -298,6 +471,50 @@ router.post('/2fa/setup', requireAuth, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/auth/2fa/verify:
+ *   post:
+ *     summary: Verify and enable 2FA
+ *     description: Verify TOTP code and enable 2FA for the user
+ *     tags: [Authentication]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [totpCode, secret]
+ *             properties:
+ *               totpCode:
+ *                 type: string
+ *                 pattern: '^[0-9]{6}$'
+ *                 example: '123456'
+ *                 description: 6-digit TOTP code
+ *               secret:
+ *                 type: string
+ *                 example: JBSWY3DPEHPK3PXP
+ *                 description: Base32 encoded secret from setup
+ *     responses:
+ *       200:
+ *         description: 2FA enabled successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MessageResponse'
+ *       400:
+ *         description: Invalid TOTP code or missing secret
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 router.post('/2fa/verify', requireAuth, async (req, res) => {
   try {
     const { totpCode } = setup2FASchema.parse(req.body);

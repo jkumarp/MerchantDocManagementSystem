@@ -4,8 +4,10 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
+import swaggerUi from 'swagger-ui-express';
 import { PrismaClient } from '@prisma/client';
 
+import { swaggerSpec } from './config/swagger.config.js';
 import authRoutes from './routes/auth.js';
 import merchantRoutes from './routes/merchants.js';
 import userRoutes from './routes/users.js';
@@ -56,11 +58,90 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'DMS API Documentation',
+  swaggerOptions: {
+    persistAuthorization: true,
+    displayRequestDuration: true,
+    filter: true,
+    showExtensions: true,
+    showCommonExtensions: true,
+  },
+}));
+
+// Swagger JSON endpoint
+app.get('/swagger.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
 // Health checks
+/**
+ * @swagger
+ * /healthz:
+ *   get:
+ *     summary: Health check endpoint
+ *     description: Returns the current health status of the API
+ *     tags: [System]
+ *     responses:
+ *       200:
+ *         description: API is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: ok
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                   example: 2024-01-15T10:30:00.000Z
+ */
 app.get('/healthz', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+/**
+ * @swagger
+ * /readyz:
+ *   get:
+ *     summary: Readiness check endpoint
+ *     description: Returns the readiness status including database connectivity
+ *     tags: [System]
+ *     responses:
+ *       200:
+ *         description: API is ready
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: ready
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                   example: 2024-01-15T10:30:00.000Z
+ *       503:
+ *         description: API is not ready
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: not ready
+ *                 error:
+ *                   type: string
+ *                   example: Database connection failed
+ */
 app.get('/readyz', async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -84,6 +165,8 @@ app.use(errorHandler);
 // Start server
 app.listen(port, () => {
   console.log(`🚀 API server running on port ${port}`);
+  console.log(`📚 API documentation available at http://localhost:${port}/api-docs`);
+  console.log(`📄 Swagger JSON available at http://localhost:${port}/swagger.json`);
 });
 
 // Graceful shutdown

@@ -23,6 +23,79 @@ const createMerchantSchema = z.object({
 
 const updateMerchantSchema = createMerchantSchema.partial();
 
+/**
+ * @swagger
+ * /api/merchants:
+ *   post:
+ *     summary: Create merchant
+ *     description: Create a new merchant (Admin only)
+ *     tags: [Merchants]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateMerchantRequest'
+ *     responses:
+ *       201:
+ *         description: Merchant created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Merchant'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ *   get:
+ *     summary: List merchants
+ *     description: Get paginated list of merchants (Admin only)
+ *     tags: [Merchants]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: List of merchants
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 merchants:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Merchant'
+ *                 pagination:
+ *                   $ref: '#/components/schemas/PaginationMeta'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Create merchant (Admin only)
 router.post('/', requireAuth, requirePerm(PERMISSIONS.MERCHANT_WRITE), async (req, res) => {
   try {
@@ -55,6 +128,116 @@ router.post('/', requireAuth, requirePerm(PERMISSIONS.MERCHANT_WRITE), async (re
   }
 });
 
+/**
+ * @swagger
+ * /api/merchants/{merchantId}:
+ *   get:
+ *     summary: Get merchant
+ *     description: Get merchant details by ID
+ *     tags: [Merchants]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: merchantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Merchant ID
+ *     responses:
+ *       200:
+ *         description: Merchant details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Merchant'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ *   patch:
+ *     summary: Update merchant
+ *     description: Update merchant information
+ *     tags: [Merchants]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: merchantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Merchant ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               legalName:
+ *                 type: string
+ *                 minLength: 2
+ *                 example: ACME Corporation Ltd.
+ *               businessType:
+ *                 type: string
+ *                 example: Private Limited Company
+ *               gstin:
+ *                 type: string
+ *                 pattern: '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$'
+ *                 example: 29ABCDE1234F1Z5
+ *               addressLine1:
+ *                 type: string
+ *                 minLength: 5
+ *                 example: 123 Business Street
+ *               addressLine2:
+ *                 type: string
+ *                 example: Suite 456
+ *               city:
+ *                 type: string
+ *                 minLength: 2
+ *                 example: Mumbai
+ *               state:
+ *                 type: string
+ *                 minLength: 2
+ *                 example: Maharashtra
+ *               country:
+ *                 type: string
+ *                 minLength: 2
+ *                 example: India
+ *               postalCode:
+ *                 type: string
+ *                 minLength: 5
+ *                 example: '400001'
+ *               contactEmail:
+ *                 type: string
+ *                 format: email
+ *                 example: contact@acmecorp.com
+ *               contactPhone:
+ *                 type: string
+ *                 example: '+91-9876543210'
+ *     responses:
+ *       200:
+ *         description: Merchant updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Merchant'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Get merchant
 router.get('/:merchantId', requireAuth, requireMerchantAccess, async (req, res) => {
   try {
@@ -128,6 +311,103 @@ router.patch('/:merchantId', requireAuth, requireMerchantAccess, requirePerm(PER
   }
 });
 
+/**
+ * @swagger
+ * /api/merchants/{merchantId}/summary:
+ *   get:
+ *     summary: Get merchant dashboard summary
+ *     description: Get merchant summary data for dashboard display
+ *     tags: [Merchants]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: merchantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Merchant ID
+ *     responses:
+ *       200:
+ *         description: Merchant summary data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 merchant:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: clp123merchant456
+ *                     legalName:
+ *                       type: string
+ *                       example: ACME Corporation Ltd.
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: 2024-01-15T10:30:00Z
+ *                 kyc:
+ *                   type: object
+ *                   properties:
+ *                     panVerified:
+ *                       type: boolean
+ *                       example: true
+ *                     aadhaarVerified:
+ *                       type: boolean
+ *                       example: true
+ *                     overallStatus:
+ *                       type: string
+ *                       enum: [COMPLETE, PENDING]
+ *                       example: COMPLETE
+ *                 documents:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       example: 15
+ *                     byCategory:
+ *                       type: object
+ *                       additionalProperties:
+ *                         type: integer
+ *                       example:
+ *                         KYC: 3
+ *                         CONTRACT: 5
+ *                         INVOICE: 7
+ *                     recent:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             example: clp123doc456
+ *                           filename:
+ *                             type: string
+ *                             example: contract.pdf
+ *                           category:
+ *                             type: string
+ *                             example: CONTRACT
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: 2024-01-15T10:30:00Z
+ *                           uploadedBy:
+ *                             type: object
+ *                             properties:
+ *                               name:
+ *                                 type: string
+ *                                 example: John Doe
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Get merchant summary for dashboard
 router.get('/:merchantId/summary', requireAuth, requireMerchantAccess, async (req, res) => {
   try {
