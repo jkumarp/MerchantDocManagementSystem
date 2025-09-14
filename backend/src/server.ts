@@ -15,6 +15,7 @@ import documentRoutes from './routes/documents.js';
 import kycRoutes from './routes/kyc.js';
 import adminRoutes from './routes/admin.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { emailService } from './services/emailService.js';
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -167,6 +168,15 @@ app.listen(port, () => {
   console.log(`🚀 API server running on port ${port}`);
   console.log(`📚 API documentation available at http://localhost:${port}/api-docs`);
   console.log(`📄 Swagger JSON available at http://localhost:${port}/swagger.json`);
+  
+  // Verify email service connection
+  emailService.verifyConnection().then((isConnected) => {
+    if (isConnected) {
+      console.log('📧 SMTP service connected successfully');
+    } else {
+      console.log('⚠️  SMTP service not configured or connection failed');
+    }
+  });
 });
 
 // Graceful shutdown
