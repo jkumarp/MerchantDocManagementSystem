@@ -89,7 +89,7 @@ export function RegisterPage() {
     onSuccess: (data) => {
       toast({
         title: 'Registration Successful!',
-        description: 'Your merchant account has been created. Please check your email for welcome instructions.',
+        description: 'Your merchant account has been created. Please check your email for welcome instructions.'+ data.merchantId,
       });
       navigate('/login');
     },

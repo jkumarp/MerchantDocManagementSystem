@@ -25,7 +25,7 @@ class EmailService {
       },
     };
 
-    this.transporter = nodemailer.createTransporter(config);
+    this.transporter = nodemailer.createTransport(config);
   }
 
   async sendWelcomeEmail(merchant: Merchant, userEmail: string): Promise<void> {
