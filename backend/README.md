@@ -181,7 +181,7 @@ DATABASE_URL="postgresql://user:password@localhost:5432/dms"
 JWT_ACCESS_SECRET="your-super-secret-jwt-access-key-here"
 
 # S3 Configuration
-S3_ENDPOINT="http://localhost:9000"
+S3_ENDPOINT="http://127.0.0.1:9000"
 S3_BUCKET="dms-docs"
 S3_ACCESS_KEY="minioadmin"
 S3_SECRET_KEY="minioadmin"

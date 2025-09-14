@@ -12,7 +12,7 @@ const createUserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(2),
   role: z.enum(['MERCHANT_ADMIN', 'MERCHANT_MANAGER', 'MERCHANT_USER', 'READ_ONLY']),
-  merchantId: z.string(),
+  merchantId: z.string().nullable(),
 });
 
 const updateUserSchema = z.object({
