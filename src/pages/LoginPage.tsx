@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -129,6 +130,15 @@ export function LoginPage() {
               <p><strong>Demo Credentials:</strong></p>
               <p>Admin: admin@dms.com / admin123456789</p>
               <p>Merchant: admin@acmecorp.com / merchant123456789</p>
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{' '}
+                <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
+                  Register your business
+                </Link>
+              </p>
             </div>
           </CardContent>
         </Card>
