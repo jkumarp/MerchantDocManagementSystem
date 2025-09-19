@@ -474,6 +474,11 @@ export function RegisterPage() {
                   Sign in here
                 </Link>
               </p>
+              <p className="text-sm text-gray-600 mt-2">
+                <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+                  ← Back to Login
+                </Link>
+              </p>
             </div>
           </CardContent>
         </Card>

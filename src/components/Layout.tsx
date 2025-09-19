@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -12,6 +12,7 @@ import {
   LayoutDashboard, 
   Settings,
   LogOut,
+  UserPlus,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -20,6 +21,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
 
   const navigation = [
@@ -43,6 +45,9 @@ export function Layout({ children }: LayoutProps) {
     }
   };
 
+  const handleMerchantRegistration = () => {
+    navigate('/register');
+  };
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -71,6 +76,12 @@ export function Layout({ children }: LayoutProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end">
+                  {user?.role === 'ADMIN' && (
+                    <DropdownMenuItem onClick={handleMerchantRegistration}>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      <span>Register Merchant</span>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
@@ -108,6 +119,23 @@ export function Layout({ children }: LayoutProps) {
                   </Link>
                 );
               })}
+              
+              {/* Admin-only Merchant Registration Link */}
+              {user?.role === 'ADMIN' && (
+                <Link
+                  to="/register"
+                  className={`
+                    flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors
+                    ${location.pathname === '/register'
+                      ? 'bg-indigo-100 text-indigo-700'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }
+                  `}
+                >
+                  <UserPlus className="mr-3 h-5 w-5" />
+                  Merchant Registration
+                </Link>
+              )}
             </div>
           </div>
         </nav>

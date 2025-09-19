@@ -136,7 +136,7 @@ export function LoginPage() {
               <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-                  Register your business
+                  Register as Merchant
                 </Link>
               </p>
             </div>
