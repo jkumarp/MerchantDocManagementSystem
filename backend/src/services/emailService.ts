@@ -1,11 +1,13 @@
 import nodemailer from 'nodemailer';
 import { Merchant } from '@prisma/client';
 
+
 interface EmailConfig {
   host: string;
   port: number;
   secure: boolean;
   auth: {
+    type: string,
     user: string;
     pass: string;
   };
@@ -20,12 +22,13 @@ class EmailService {
       port: parseInt(process.env.SMTP_PORT || '587'),
       secure: process.env.SMTP_SECURE === 'true',
       auth: {
+        type: "login",
         user: process.env.SMTP_USER || '',
         pass: process.env.SMTP_PASS || '',
       },
     };
 
-    this.transporter = nodemailer.createTransport(config);
+    this.transporter = nodemailer.createTransport(config as any);
   }
 
   async sendWelcomeEmail(merchant: Merchant, userEmail: string): Promise<void> {

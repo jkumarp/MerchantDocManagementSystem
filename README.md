@@ -189,6 +189,7 @@ After seeding, you can use these credentials:
 - `npm run format` - Format code
 - `npm run db:migrate` - Run database migrations
 - `npm run db:seed` - Seed database with test data
+- minio.exe server C:\minio-data - Rn minio server
 
 ### Testing
 
