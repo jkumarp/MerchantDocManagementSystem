@@ -94,7 +94,7 @@ function App() {
           }
         />
         <Route path="/login" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/register" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/register" element={<Navigate to="/register" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Layout>
