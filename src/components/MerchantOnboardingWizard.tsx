@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from './ui/button';
@@ -10,16 +10,16 @@ import { Alert, AlertDescription } from './ui/alert';
 import { LoadingSpinner } from './ui/loading-spinner';
 import { Badge } from './ui/badge';
 import { useToast } from '../hooks/use-toast';
-import { documentApi, kycApi } from '../services/api';
+import { documentApi } from '../services/api';
 import { 
   FileText, 
   Eye, 
   EyeOff, 
   CheckCircle, 
-  Upload,
+  //Upload,
   Shield,
   Clock,
-  AlertCircle,
+ // AlertCircle,
   ChevronRight,
   ChevronLeft
 } from 'lucide-react';
@@ -74,7 +74,7 @@ export function MerchantOnboardingWizard() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [merchantId, setMerchantId] = useState<string>('');
+  const [, setMerchantId] = useState<string>('');
   
   const [formData, setFormData] = useState<WizardFormData>({
     // Registration data
