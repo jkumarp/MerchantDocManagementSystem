@@ -26,9 +26,7 @@ export function Layout({ children }: LayoutProps) {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'MERCHANT_ADMIN', 'MERCHANT_MANAGER', 'MERCHANT_USER', 'READ_ONLY'] },
-    { name: 'Documents', href: '/documents', icon: FileText, roles: ['ADMIN', 'MERCHANT_ADMIN', 'MERCHANT_MANAGER', 'MERCHANT_USER', 'READ_ONLY'] },
     { name: 'Users', href: '/users', icon: Users, roles: ['ADMIN', 'MERCHANT_ADMIN', 'MERCHANT_MANAGER'] },
-    { name: 'KYC', href: '/kyc', icon: Shield, roles: ['ADMIN', 'MERCHANT_ADMIN', 'MERCHANT_MANAGER'] },
     { name: 'Profile', href: `/merchant/${user?.merchantId}/profile`, icon: Building2, roles: ['MERCHANT_ADMIN', 'MERCHANT_MANAGER'] },
     { name: 'Admin', href: '/admin', icon: Settings, roles: ['ADMIN'] },
   ];
